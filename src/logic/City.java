@@ -1,4 +1,4 @@
-package snowFinder;
+package logic;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -43,7 +43,7 @@ public class City {
 	
 	/** URL to scrape snowdepth from. */
 	private String url;
-	private Supplier<Float> getSnowDepth;
+	private Supplier<Float[]> getSnowDepth;
 	private float snowDepth;
 	
 	/** Assigned to the current value of numberOfCities. */
@@ -85,7 +85,7 @@ public class City {
 		return name;
 	}
 	
-	public Supplier<Float> getSnowDepthSupplier() {
+	public Supplier<Float[]> getSnowDepthSupplier() {
 		return this.getSnowDepth;
 	}
 	
@@ -102,7 +102,7 @@ public class City {
 		return false;
 	}
 	
-	public static Supplier<Float> createFinderThread (City city) {
+	public static Supplier<Float[]> createFinderThread (City city) {
 		
 		return () -> {
 			Elements ACrepositories = null;
@@ -116,22 +116,28 @@ public class City {
 						.followRedirects(true)
 						.execute()
 						.parse()
-						.getElementsByClass("data-module additional-conditions");
+						.getElementsByClass("region-content-main");
+						
 			} catch (SocketTimeoutException ste) {
-				return snowDepth;
+				return null;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			
-			for (Element repository : ACrepositories) {
-				// Gets "_ °in"
-				String depthString = repository.getElementsByClass("test-false wu-unit"
-						+ " wu-unit-snow ng-star-inserted").text();
-				
-				snowDepth = Float.parseFloat(depthString.replaceAll(" °in", ""));
-			}
+			// Gets "_ °in"
+			String depthString = ACrepositories.get(0)
+					.getElementsByClass("test-false wu-unit wu-unit-snow ng-star-inserted")
+					.text();
 			
-			return snowDepth;
+			String tempString = ACrepositories.get(0)
+					.getElementsByClass("test-true wu-unit wu-unit-temperature is-degree-visible ng-star-inserted")
+					.get(0)
+					.text();
+			
+			snowDepth = Float.parseFloat(depthString.replaceAll(" °in", ""));
+			float temp = Float.parseFloat(tempString.replaceAll(" °F", ""));
+			
+			return new Float[] { snowDepth, temp };
 		};
 	}
 	

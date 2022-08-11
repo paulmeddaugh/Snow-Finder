@@ -1,4 +1,4 @@
-package snowFinder;
+package renderer;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -7,21 +7,30 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 import javax.swing.plaf.ColorUIResource;
 
 public class GUI extends JFrame {
@@ -31,7 +40,8 @@ public class GUI extends JFrame {
 	 */
 	private static final long serialVersionUID = -8832085278681447439L;
 
-	static JTextArea area = new JTextArea("Loading...");
+	private JTextArea area = new JTextArea("Loading...\n");
+	private List<Runnable> listeners = new ArrayList<Runnable>();
 	
 	private Float mileRadius;
 	private Integer zip;
@@ -60,24 +70,24 @@ public class GUI extends JFrame {
 		if (selectedValue == null) { // Closed
 			System.exit(0);
 			
-		} else if (selectedValue.toString().equals(possibleValues[0])) { // Zip with Mile Radius
+		// Near a zip code option
+		} else if (selectedValue.toString().equals(possibleValues[0])) {
 			
 			searchingMethod = NEAR_ZIP_CODE;
 			
 			JTextField zipField = new JTextField();
-			JTextField mileRadiusField = new JTextField();
-			mileRadiusField.setText("Within less then 500 miles");
-			mileRadiusField.setForeground(Color.GRAY);
-			mileRadiusField.addFocusListener(new FocusAdapter() {
+			zipField.addAncestorListener(new AncestorListener() {
 				@Override
-				public void focusGained(FocusEvent e) {
-			        if (((JTextField) e.getSource()).getText().equals(
-			        		"Within less then 500 miles")) {
-			        	((JTextField) e.getSource()).setText("");
-			        	((JTextField) e.getSource()).setForeground(Color.BLACK);
-			        }
-			    }
+				public void ancestorAdded(AncestorEvent e) {
+					JComponent component = e.getComponent();
+					component.requestFocusInWindow();
+				}
+
+				@Override public void ancestorRemoved(AncestorEvent event) {}
+				@Override public void ancestorMoved(AncestorEvent event) {}
 			});
+			PlaceHolderTextField mileRadiusField = new PlaceHolderTextField(
+					"Within less than 500 miles");
 			
 			Object[] fields = {
 					"Please enter a zip code: ", zipField,
@@ -126,11 +136,14 @@ public class GUI extends JFrame {
 				
 				if (!errorMessage.equals("")) {
 					
-					JOptionPane.showInternalMessageDialog(null, errorMessage,
-						"What Do You Take Me For?", JOptionPane.INFORMATION_MESSAGE);
+					final String error = errorMessage;
+					TaskBarDialog.wrapInJFrame(() -> 
+						JOptionPane.showInternalMessageDialog(null, error,
+						"What Do You Take Me For?", JOptionPane.INFORMATION_MESSAGE)
+					);
 					
 					zipField.setText("");
-					mileRadiusField.setText("");
+					mileRadiusField.setTextToPlaceHolder();
 					
 				} else {
 					break;
@@ -138,9 +151,7 @@ public class GUI extends JFrame {
 			}
 			
 		} else if (selectedValue.equals(possibleValues[1])) { // Major Cities
-			
 			searchingMethod = MAJOR_CITIES;
-			
 		}
 		
 		area.setMargin(new Insets(10, 10, 10, 10));
@@ -150,7 +161,22 @@ public class GUI extends JFrame {
 		scrollable.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);  
 		scrollable.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED); 
 		
+		// Retry button
+		JButton goAgain = new JButton("Go Again");
+		goAgain.setPreferredSize(new Dimension(100, 28));
+		goAgain.addMouseListener(new MouseAdapter() {
+			@Override public void mousePressed(MouseEvent e) {
+				for (Runnable r : listeners) {
+					r.run();
+				}
+			}
+		});
+		
+		JPanel buttonPanel = new JPanel(new BorderLayout());
+		buttonPanel.add(goAgain, BorderLayout.EAST);
+		
 		this.getContentPane().add(scrollable, BorderLayout.CENTER);
+		this.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 		
 		// Loads icon
 		Image icon = null;
@@ -191,5 +217,12 @@ public class GUI extends JFrame {
 		area.setText(text);
 	}
 	
+	public void appendText(String text) {
+		area.setText(area.getText() + text + "\n");
+	}
+	
+	public void addGoAgainListeners(Runnable r) {
+		listeners.add(r);
+	}
 	
 }

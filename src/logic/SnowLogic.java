@@ -1,4 +1,4 @@
-package snowFinder;
+package logic;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -15,7 +15,10 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
 import org.json.JSONException;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
+
+import renderer.GUI;
 
 public class SnowLogic {
 	
@@ -40,6 +43,13 @@ public class SnowLogic {
 		} else {
 			loadMajorCities();
 		}
+		
+		gui.addGoAgainListeners(() -> {
+			gui.dispose();
+			pool = new ScheduledThreadPoolExecutor(25);
+			
+			main(null);
+		});
 	}
 	
 	/**
@@ -51,38 +61,48 @@ public class SnowLogic {
 	 */
 	public static void loadSnowDepth (City[] cities) {
 		
+		gui.appendText(cities.length + " results");
+		
 		for (City city : cities) {
 			
-			SwingWorker<Float, Void> sw = new SwingWorker<Float, Void>() {
+			SwingWorker<Float[], Void> sw = new SwingWorker<Float[], Void>() {
 
 				@Override
-				protected Float doInBackground() throws Exception {
+				protected Float[] doInBackground() throws Exception {
 					return city.getSnowDepthSupplier().get();
 				}
 
 				@Override
 				protected void done() {
 					float snowDepth = -1f;
+					float temp = Float.MAX_VALUE;
 					try {
-						snowDepth = get();
+						Float[] results = (get() != null) ? get() : null;
+						
+						if (results == null) {
+							gui.setText(gui.getText() + "Connection timed out getting " 
+								+ "the snow depth in " + city.getName());
+						} else {
+							snowDepth = results[0];
+							temp = results[1];
+							
+							// Displays results in GUI
+							if (snowDepth > 0) {
+								gui.appendText("X - Snow found in " 
+									+ city.getName() + ", " + city.getState()
+									+ " snow depth: " + snowDepth + "°in "
+									+ (city.getDistance() != 0 ? " (" + city.getDistance() 
+											+ " miles away" : "") + ", " + temp + "°F)");
+							} else {
+								gui.appendText("No snow in " 
+									+ city.getName() + ", " + city.getState() + " "
+									+ (city.getDistance() != 0 ? " (" + city.getDistance() 
+											+ " miles away" : "") + ", " + temp + "°F)");
+							}
+						}
+						
 					} catch (InterruptedException | ExecutionException e) {
 						e.printStackTrace();
-					}
-					
-					if (snowDepth == -1f) {
-						gui.setText(gui.getText() + "Connection timed out getting " 
-								+ "the snow depth in " + city.getName());
-					} else if (snowDepth > 0) {
-						gui.setText(gui.getText() + "\nX - Snow found in " 
-							+ city.getName() + ", " + city.getState()
-							+ " snow depth: " + snowDepth + "°in "
-							+ (city.getDistance() != 0 ? " (" + city.getDistance() 
-									+ " miles away)" : ""));
-					} else {
-						gui.setText(gui.getText() + "\nNo snow in " 
-							+ city.getName() + ", " + city.getState() + " "
-							+ (city.getDistance() != 0 ? " (" + city.getDistance() 
-									+ " miles away)" : ""));
 					}
 				}
 			};
@@ -113,6 +133,7 @@ public class SnowLogic {
 				.append("/").append(units);
 		
 		String responseJson = "";
+		City[] cities = null;
 		try {
 			responseJson = Jsoup.connect(endPoint + query.toString())
 				.ignoreContentType(true)
@@ -123,21 +144,40 @@ public class SnowLogic {
 				.followRedirects(true)
 				.get()
 				.text();
-		} catch (IOException e) {
-			e.printStackTrace();
+			
+			cities = City.parseFromJSON(responseJson);
+			
+		} catch (HttpStatusException hse) {
+			if (hse.getStatusCode() == 400) {
+				JOptionPane.showInternalMessageDialog(null, "The request format was not "
+					+ "correct.", "Error", JOptionPane.INFORMATION_MESSAGE);
+			} else if (hse.getStatusCode() == 401) {
+				JOptionPane.showInternalMessageDialog(null, "The API key is invalid.",
+						"Error", JOptionPane.INFORMATION_MESSAGE);
+				System.exit(0);
+			} else if (hse.getStatusCode() == 404) {
+				JOptionPane.showInternalMessageDialog(null, "Zip code could not be found.",
+						"Error", JOptionPane.INFORMATION_MESSAGE);
+			} else if (hse.getStatusCode() == 429) {
+				JOptionPane.showInternalMessageDialog(null, "The 10 uses-per-hour limit "
+					+ "has been reached.", "Error", JOptionPane.INFORMATION_MESSAGE);
+				System.exit(0);
+			}
+			hse.printStackTrace();
+		} catch (IOException ioe) {
+			
 			JOptionPane.showInternalMessageDialog(null, "Zip code could not be found.",
 					"Error", JOptionPane.INFORMATION_MESSAGE);
 			System.exit(0);
-		}
-		
-		City[] cities = null;
-		try {
-			cities = City.parseFromJSON(responseJson);
 		} catch (JSONException je) {
 			gui.setText(responseJson);
-			return;
 		}
-		loadSnowDepth(cities);
+		
+		if (cities == null || cities.length == 0) {
+			gui.setText("No cities found within " + distance + " miles of zip code " + zip);
+		} else {
+			loadSnowDepth(cities);
+		}
 	}
 	
 	/**
