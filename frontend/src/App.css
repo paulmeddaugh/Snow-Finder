@@ -1,0 +1,172 @@
+html, body, .body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+.body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.blueSky {
+  position: absolute;
+  left: 54%;
+  background-color: #61dafb;
+  transform: skew(48deg);
+  width: 140%;
+  height: 100%;
+  border-left: 1px solid black;
+}
+
+.blueSky-triangles {
+  position: absolute;
+  transform: skew(43deg);
+  width: 0;
+  height: 0;
+  border: 150px solid transparent;
+  border-top: 0;
+  border-bottom: 300px solid #61dafb;
+}
+
+.triangle-1 {
+
+}
+
+.inputContainer {
+  z-index: 5;
+  background-color: whitesmoke;
+  border: 1px solid grey;
+  padding: 10px;
+  position: relative;
+  width: min(unset, 100%);
+}
+
+h1 {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 5px;
+  font-style: italic;
+  color: darkgray;
+}
+
+.tabs {
+  position: absolute;
+  bottom: 100%;
+  right: 0%;
+  display: inline;
+  margin-bottom: 3px;
+}
+
+.tabLabel {
+  color: grey;
+  padding: 3px 5px;
+  cursor: pointer;
+}
+
+.activeTab {
+  color: black;
+}
+
+.input {
+  margin: 5px;
+  width: 125px;
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+.results {
+  border: 1px solid grey;
+  background-color: #e3e3e3;
+  padding: 5px;
+  border-radius: 5px;
+  overflow-y: hidden;
+  animation: resultsOpen 1s ease;
+}
+
+.results > * {
+  display: inline;
+}
+
+.citiesWithSnow {
+  color: white;
+  font-size: 32pt;
+}
+
+.log {
+  display: block;
+}
+
+@keyframes resultsOpen {
+  0% {opacity: 0; height: 0;}
+  100% {opacity: 1; height: unset;}
+}
+
+.d-inline {
+  display: inline;
+}
+
+.invisible {
+  margin: 0;
+  width: 0;
+  height: 0;
+  visibility: hidden;
+}
+
+.button-majorCities {
+  width: min(450px, 100vw);
+  margin: 5px;
+}
+
+.snowball-fight {
+  background-image: url('./resources/snowball-fight-cropped.gif');
+  background-size: contain;
+  width: 126.75px;
+  height: 112.5px;
+  position: absolute;
+  left: 10%;
+  bottom: 15%;
+}
+
+/* .App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+} */
