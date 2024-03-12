@@ -5,4 +5,4 @@ Snow Finder uses the combination of a call to a REST API and web scrapping to fi
 
 It's "main" function and logic is found in [SnowLogic.java](/src/main/java/com/snowfinder/logic/SnowLogic.java), and it's directory set up reflects the used IDE: Eclipse.
 
-The desktop application can be downloaded here: https://paulmeddaugh.github.io/resources/Snow%20Finder.exe
+The desktop application can be downloaded here: https://paulmeddaugh.github.io/resources/SnowFinder%20v2.0.6.zip
